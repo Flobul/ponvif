@@ -25,6 +25,9 @@
  *          - _xml2array
  *          - _sendrequest
  *	    - _passwordDigest
+ * FIX by Flobul 18.08.2023
+ *  Correction sourcetoken
+ *  Catch error in request method
  *
  */
 
@@ -1062,24 +1065,25 @@ class Ponvif {
 	}
 
 	protected function _getActiveSources($videoSources, $profiles) {
+		// create an array of $videoSources if only one videoSource
+		$videoSources = ($videoSources === [] || (array_keys($videoSources) === range(0, count($videoSources) - 1))) ? $videoSources : [$videoSources];
 		$sources = array();
-
-		if (isset($videoSources['@attributes'])) {
+		// camera may have many sources
+		for ($i = 0;$i < count($videoSources);$i++) {
 			// NVT is a camera
-			$sources[0]['sourcetoken'] = $videoSources['@attributes']['token'];
-			$this->_getProfileData($sources, 0, $profiles);
-		}
-		else {
-			// NVT is an encoder
-			for ($i = 0;$i < count($videoSources);$i++) {
+			if (isset($videoSources[$i]['@attributes'])) {
+				$sources[$i]['sourcetoken'] = $videoSources[$i]['@attributes']['token'];
+				$this->_getProfileData($sources, $i, $profiles);
+			}
+			else {
+				// NVT is an encoder
 				if (strtolower($videoSources[$i]['@attributes']['SignalActive']) == 'true') {
 					$sources[$i]['sourcetoken'] = $videoSources[$i]['@attributes']['token'];
 					$this->_getProfileData($sources, $i, $profiles);
 				}
 			} // for
-			
-		}
 
+		}
 		return $sources;
 	}
 
@@ -1197,14 +1201,21 @@ class Ponvif {
 			'Content-Length: ' . strlen($post_string)
 		));
 		//curl_setopt($soap_do, CURLOPT_USERPWD, $user . ":" . $password); // HTTP authentication
-		if (($result = curl_exec($soap_do)) === false) {
-			$err = curl_error($soap_do);
-			$this->lastresponse = array(
-				"Fault" => $err
-			);
+		try {
+			if (($result = curl_exec($soap_do)) === false) {
+				$err = curl_error($soap_do);
+				$this->lastresponse = array(
+					"Fault" => $err
+				);
+			}
+			else {
+				$this->lastresponse = $this->_xml2array($result);
+			}
 		}
-		else {
-			$this->lastresponse = $this->_xml2array($result);
+		catch(Exception $e) {
+			$this->lastresponse = array(
+				"Fault" => $e->getMessage()
+			);
 		}
 		return $this->lastresponse;
 	}
