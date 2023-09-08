@@ -658,6 +658,28 @@ class Ponvif {
 
 		}
 	}
+  
+	public function core_SystemReboot() {
+		$REQ=$this->_makeToken();
+		$post_string='<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><s:Header><wsse:Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><UsernameToken><Username>%%USERNAME%%</Username><Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%%PASSWORD%%</Password><Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">%%NONCE%%</Nonce><Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%%CREATED%%</Created></UsernameToken></wsse:Security></s:Header><s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><SystemReboot xmlns="http://www.onvif.org/ver10/device/wsdl"/></s:Body></s:Envelope>';
+		$post_string = str_replace(array(
+			"%%USERNAME%%",
+			"%%PASSWORD%%",
+			"%%NONCE%%",
+			"%%CREATED%%"
+		) , array(
+			$REQ['USERNAME'],
+			$REQ['PASSDIGEST'],
+			$REQ['NONCE'],
+			$REQ['TIMESTAMP'],
+		) , $post_string);
+		if ($this->isFault($response = $this->_send_request($this->mediauri, $post_string))) {
+			if ($this->intransingent) {
+				throw new Exception('DeleteOSD: Communication error');
+			}
+
+		}
+	}
 
 	public function ptz_GetPresets($profileToken) {
 		if ($this->ptzuri == '') {
@@ -998,6 +1020,40 @@ class Ponvif {
 
 		$REQ = $this->_makeToken();
 		$post_string = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Header><Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><UsernameToken><Username>%%USERNAME%%</Username><Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%%PASSWORD%%</Password><Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">%%NONCE%%</Nonce><Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%%CREATED%%</Created></UsernameToken></Security></s:Header><s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><Stop xmlns="http://www.onvif.org/ver20/ptz/wsdl"><ProfileToken>%%PROFILETOKEN%%</ProfileToken><PanTilt>%%PANTILT%%</PanTilt><Zoom>%%ZOOM%%</Zoom></Stop></s:Body></s:Envelope>';
+		$post_string = str_replace(array(
+			"%%USERNAME%%",
+			"%%PASSWORD%%",
+			"%%NONCE%%",
+			"%%CREATED%%",
+			"%%PROFILETOKEN%%",
+			"%%PANTILT%%",
+			"%%ZOOM%%"
+		) , array(
+			$REQ['USERNAME'],
+			$REQ['PASSDIGEST'],
+			$REQ['NONCE'],
+			$REQ['TIMESTAMP'],
+			$profileToken,
+			$pantilt,
+			$zoom
+		) , $post_string);
+		if ($this->isFault($this->_send_request($this->ptzuri, $post_string))) {
+			if ($this->intransingent) {
+				throw new Exception('Stop: Communication error');
+			}
+
+		}
+	}
+  
+	public function ptz_GotoHomePosition($profileToken, $pantilt, $zoom) {
+		if ($this->ptzuri == '') {
+			return array();
+		}
+
+		$REQ = $this->_makeToken();
+      
+        $post_string = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Header><Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><UsernameToken><Username>%%USERNAME%%</Username><Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%%PASSWORD%%</Password><Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">%%NONCE%%</Nonce><Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%%CREATED%%</Created></UsernameToken></Security></s:Header><s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><GotoHomePosition><ProfileToken>%%PROFILETOKEN%%</ProfileToken><PanTilt>%%PANTILT%%</PanTilt><Zoom>%%ZOOM%%</Zoom></GotoHomePosition></s:Body></s:Envelope>';
+      
 		$post_string = str_replace(array(
 			"%%USERNAME%%",
 			"%%PASSWORD%%",
